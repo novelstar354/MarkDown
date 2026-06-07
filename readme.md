@@ -1,196 +1,258 @@
 # Google Sheets Markdown Renderer
 
-GoogleスプレッドシートでMarkdownをリアルタイム変換できるApps Scriptです。
+GoogleスプレッドシートでMarkdownをリアルタイム描画できる高機能Apps Script。
 
-セルに入力したMarkdownを、自動でリッチテキスト表示へ変換します。
+セルにMarkdownを書くだけで、自動的にリッチテキストへ変換されます。
 
 ---
 
-# 特徴
+# Features
 
 * リアルタイムMarkdown変換
-* Google Sheets上でそのまま使える
+* Undo対応
+* ダークテーマ
+* コードブロック
+* リッチテキスト描画
+* リンク自動変換
 * Apps Scriptのみで動作
 * インストール不要
-* 軽量
-* オープンソース
+* 軽量・高速
 
 ---
 
-# 対応Markdown
+# Supported Markdown
 
-| Markdown     | 表示        |
-| ------------ | --------- |
-| `# 見出し`      | 大見出し      |
-| `## 見出し2`    | 中見出し      |
-| `### 見出し3`   | 小見出し      |
-| `**太字**`     | 太字        |
-| `*斜体*`       | 斜体        |
-| `~~削除~~`     | 打ち消し      |
-| `` `code` `` | コード表示     |
-| `> 引用`       | 引用スタイル    |
-| `- リスト`      | 箇条書き      |
-| `- [ ]`      | チェックボックス  |
-| `- [x]`      | 完了チェック    |
-| `[リンク](URL)` | クリック可能リンク |
+| Markdown       | Result    |
+| -------------- | --------- |
+| `# Heading`    | 大見出し      |
+| `## Heading`   | 中見出し      |
+| `### Heading`  | 小見出し      |
+| `**Bold**`     | 太字        |
+| `*Italic*`     | 斜体        |
+| `~~Strike~~`   | 打ち消し      |
+| `` `Code` ``   | インラインコード  |
+| `> Quote`      | 引用        |
+| `- List`       | 箇条書き      |
+| `- [ ] Task`   | 未完了チェック   |
+| `- [x] Task`   | 完了チェック    |
+| `[Link](URL)`  | クリック可能リンク |
+| ` ```code``` ` | コードブロック   |
 
 ---
 
-# デモ
+# Demo
 
 入力：
 
-```markdown
-# タイトル
+````markdown id="61vskm"
+# Google Sheets Markdown Renderer
 
-## サブタイトル
+## Features
 
-**太字**
+**Bold Text**
 
-*斜体*
+*Italic Text*
 
-~~削除~~
+~~Strike~~
 
 `const x = 1`
 
-> 引用
+> Quote
 
-- リスト
+- List Item
 
-- [ ] 未完了
+- [ ] TODO
 
-- [x] 完了
+- [x] DONE
 
 [Google](https://google.com)
+
+```js
+function hello() {
+  console.log("Hello");
+}
 ```
+````
 
 ↓
 
-自動でMarkdownスタイルへ変換されます。
+Google Sheets上で自動描画。
 
 ---
 
-# インストール方法
+# Installation
 
-## 1. Google Sheetsを開く
+## 1. Open Google Sheets
 
-新規または既存のスプレッドシートを開きます。
+新規または既存のGoogleスプレッドシートを開きます。
 
 ---
 
-## 2. Apps Scriptを開く
+## 2. Open Apps Script
 
 メニュー：
 
-```text
+```text id="g3v37n"
 拡張機能 → Apps Script
 ```
 
 ---
 
-## 3. コードを貼り付け
+## 3. Paste Script
 
-`Code.gs` の中身をすべて削除し、スクリプトを貼り付けます。
+`Code.gs` の内容をすべて削除し、スクリプトを貼り付けます。
 
 ---
 
-## 4. 保存
+## 4. Save
 
 保存ボタンを押します。
 
 ---
 
-## 5. 初回実行
+## 5. Run Once
 
 Apps Script画面で：
 
-```text
+```text id="wsvu4x"
 ▶ 実行
 ```
 
 を押して認証します。
 
-Googleアカウント認証が表示されるので許可してください。
+Googleアカウント認証を許可してください。
 
 ---
 
-# 使い方
+# Usage
 
-任意のセルにMarkdownを書くだけです。
+セルにMarkdownを書くだけです。
 
 例：
 
-```markdown
-**Hello**
+```markdown id="dvm3bj"
+**Hello World**
 ```
 
-セル編集完了後、自動で太字に変換されます。
+編集完了後、自動で太字へ変換されます。
 
 ---
 
-# メニュー
+# Menu
 
 シート上部に：
 
-```text
+```text id="d6y69g"
 Markdown
 ```
 
 メニューが追加されます。
 
-## 全再変換
+## Available Actions
 
-```text
-Markdown → 全再変換
-```
-
-シート内のMarkdownをすべて再変換します。
+| Menu                       | Description |
+| -------------------------- | ----------- |
+| `Markdown → 全再変換`          | シート全体を再描画   |
+| `Markdown → ダークテーマ ON/OFF` | ダークモード切替    |
 
 ---
 
-# 技術仕様
+# Dark Theme
+
+ダークテーマ対応。
+
+* 背景色自動変更
+* 文字色最適化
+* コードブロック強化
+
+---
+
+# Code Block
+
+コードブロック対応。
+
+例：
+
+````markdown id="2k9ndm"
+```javascript
+const hello = "world";
+```
+````
+
+↓
+
+等幅フォント + ダーク背景で表示。
+
+---
+
+# Technical Details
 
 * Google Apps Script
 * RichTextValue API
 * onEdit Trigger
-* Real-time Markdown Rendering
+* Markdown Tokenizer
+* Rich Text Renderer
+* Real-time Rendering Engine
 
 ---
 
-# 注意事項
+# Advanced Features
 
-## 未対応機能
+## Undo Safe
 
-現在は以下に未対応です。
+Google SheetsのUndoと競合しにくい安全設計。
+
+---
+
+## Token Based Rendering
+
+MarkdownをToken化して描画するため：
+
+* indexズレ防止
+* 複数装飾混在対応
+* 安定したスタイル描画
+
+---
+
+## Real-time Rendering
+
+セル編集後、自動でMarkdownを変換。
+
+---
+
+# Limitations
+
+現在未対応：
 
 * テーブル
-* コードブロック
-* シンタックスハイライト
-* 画像
 * HTML埋め込み
-
----
-
-## パフォーマンスについて
-
-大量セルを同時編集すると、変換に時間がかかる場合があります。
-
----
-
-# 今後追加予定
-
-* Discord風Markdown
-* Obsidian風テーマ
-* Notion風表示
-* コードブロック
+* 画像
 * シンタックスハイライト
-* サイドバープレビュー
-* ダークモード
-* Markdown Export
+* ネストリスト
+* Obsidian拡張記法
 
 ---
 
-# ライセンス
+# Roadmap
+
+予定機能：
+
+* シンタックスハイライト
+* Markdown Export
+* HTML Export
+* PDF Export
+* Obsidian Theme
+* Notion Theme
+* Discord Markdown
+* Side Preview
+* Live Preview
+* Custom CSS
+* Multi Theme
+* Auto Table Rendering
+
+---
+
+# License
 
 MIT License
 
@@ -198,6 +260,6 @@ MIT License
 
 ---
 
-# 作者
+# Author
 
 Novel Star

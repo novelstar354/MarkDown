@@ -22,21 +22,24 @@ GoogleスプレッドシートでMarkdownをリアルタイム描画できる高
 
 # Supported Markdown
 
-| Markdown       | Result    |
-| -------------- | --------- |
-| `# Heading`    | 大見出し      |
-| `## Heading`   | 中見出し      |
-| `### Heading`  | 小見出し      |
-| `**Bold**`     | 太字        |
-| `*Italic*`     | 斜体        |
-| `~~Strike~~`   | 打ち消し      |
-| `` `Code` ``   | インラインコード  |
-| `> Quote`      | 引用        |
-| `- List`       | 箇条書き      |
-| `- [ ] Task`   | 未完了チェック   |
-| `- [x] Task`   | 完了チェック    |
-| `[Link](URL)`  | クリック可能リンク |
-| ` ```code``` ` | コードブロック   |
+| Markdown        | Result    |
+| --------------- | --------- |
+| `# Heading`     | 特大見出し    |
+| `## Heading`    | 大見出し      |
+| `### Heading`   | 中見出し      |
+|  #### Heading   | 小見出し      |
+|  ##### Heading  | 特小見出し　　|
+|  ###### Heading | 極小見出し    |
+| `**Bold**`      | 太字        |
+| `*Italic*`      | 斜体        |
+| `~~Strike~~`    | 打ち消し      |
+| `` `Code` ``    | インラインコード  |
+| `> Quote`       | 引用        |
+| `- List`        | 箇条書き      |
+| `- [ ] Task`    | 未完了チェック   |
+| `- [x] Task`    | 完了チェック    |
+| `[Link](URL)`   | クリック可能リンク |
+| ` ```code``` `  | コードブロック   |
 
 ---
 

@@ -1,6 +1,6 @@
 /**
  * =========================================================
- * Google Sheets Markdown Renderer - Stable Full Edition
+ * Google Sheets Markdown Renderer - H1~H6 FULL Edition
  * =========================================================
  */
 
@@ -8,15 +8,11 @@ const MD_CONFIG = {
   INLINE_CODE_BG: "#eeeeee",
   DARK: {
     BG: "#111111",
-    TEXT: "#eeeeee",
-    CODE_BG: "#1e1e1e",
     CODE_TEXT: "#dcdcdc",
     QUOTE: "#888888"
   },
   LIGHT: {
     BG: null,
-    TEXT: null,
-    CODE_BG: "#f5f5f5",
     CODE_TEXT: "#222222",
     QUOTE: "#666666"
   }
@@ -35,7 +31,7 @@ function onOpen() {
 }
 
 /* =========================================================
- * DARK MODE
+ * THEME
  * ========================================================= */
 
 function toggleDarkTheme() {
@@ -59,7 +55,7 @@ function onEdit(e) {
   const value = e.value;
 
   if (!value || typeof value !== "string") return;
-  if (cell.getNote() === "__MD_RENDERING__") return;
+  if (cell.getNote() === "MD_LOCK") return;
 
   applyMarkdown(cell, value);
 }
@@ -76,7 +72,7 @@ function renderMarkdown() {
   for (let r = 0; r < values.length; r++) {
     for (let c = 0; c < values[r].length; c++) {
       const value = values[r][c];
-      if (!value || typeof value !== "string") continue;
+      if (typeof value !== "string" || !value) continue;
 
       applyMarkdown(range.getCell(r + 1, c + 1), value);
     }
@@ -86,13 +82,33 @@ function renderMarkdown() {
 }
 
 /* =========================================================
+ * HEADER STYLE (H1~H6)
+ * ========================================================= */
+
+function getHeaderStyle(level) {
+  const sizes = {
+    1: 26,
+    2: 22,
+    3: 18,
+    4: 16,
+    5: 14,
+    6: 12
+  };
+
+  return SpreadsheetApp.newTextStyle()
+    .setBold(true)
+    .setFontSize(sizes[level] || 12)
+    .build();
+}
+
+/* =========================================================
  * APPLY MARKDOWN
  * ========================================================= */
 
 function applyMarkdown(cell, original) {
-  try {
-    cell.setNote("__MD_RENDERING__");
+  cell.setNote("MD_LOCK");
 
+  try {
     const isDark =
       PropertiesService.getDocumentProperties().getProperty("MD_DARK") === "true";
 
@@ -102,15 +118,20 @@ function applyMarkdown(cell, original) {
 
     const styles = [];
     const renderedLines = [];
+
     let index = 0;
 
     for (let i = 0; i < lines.length; i++) {
       let line = lines[i];
-      let headingStyle = null;
 
-      // CODE BLOCK
+      let headingStyle = null;
+      let isQuote = false;
+
+      /* =========================
+       * CODE BLOCK
+       * ========================= */
       if (line.startsWith("```")) {
-        let code = [];
+        const code = [];
         i++;
 
         while (i < lines.length && !lines[i].startsWith("```")) {
@@ -134,35 +155,39 @@ function applyMarkdown(cell, original) {
         continue;
       }
 
-      // HEADERS
-      if (line.startsWith("# ")) {
-        line = line.replace("# ", "");
-        headingStyle = SpreadsheetApp.newTextStyle().setBold(true).setFontSize(22).build();
-      } else if (line.startsWith("## ")) {
-        line = line.replace("## ", "");
-        headingStyle = SpreadsheetApp.newTextStyle().setBold(true).setFontSize(18).build();
-      } else if (line.startsWith("### ")) {
-        line = line.replace("### ", "");
-        headingStyle = SpreadsheetApp.newTextStyle().setBold(true).setFontSize(15).build();
+      /* =========================
+       * HEADERS H1~H6
+       * ========================= */
+      const headerMatch = line.match(/^(#{1,6})\s+(.*)$/);
+      if (headerMatch) {
+        const level = headerMatch[1].length;
+        line = headerMatch[2];
+        headingStyle = getHeaderStyle(level);
       }
 
-      // QUOTES
-      let isQuote = false;
+      /* =========================
+       * QUOTE
+       * ========================= */
       if (line.startsWith("> ")) {
-        line = line.replace("> ", "");
+        line = line.slice(2);
         isQuote = true;
       }
 
-      // CHECKBOX
+      /* =========================
+       * LIST / CHECKBOX
+       * ========================= */
       line = line
         .replace(/^- \[ \] /g, "☐ ")
         .replace(/^- \[[xX]\] /g, "☑ ")
         .replace(/^- /g, "• ");
 
+      /* =========================
+       * INLINE PARSER
+       * ========================= */
       const regex =
-        /(\*\*(.*?)\*\*)|(\*(.*?)\*)|(~~(.*?)~~)|(`(.*?)`)|(\[(.*?)\]\((.*?)\))/g;
+        /(\*\*(.+?)\*\*)|(\*(.+?)\*)|(~~(.+?)~~)|(`(.+?)`)|(\[(.+?)\]\((.+?)\))/g;
 
-      let tokens = [];
+      const tokens = [];
       let last = 0;
       let m;
 
@@ -193,26 +218,26 @@ function applyMarkdown(cell, original) {
         const start = local;
         const end = local + t.text.length;
 
-        const baseStyle = SpreadsheetApp.newTextStyle();
+        const base = SpreadsheetApp.newTextStyle();
 
         switch (t.type) {
           case "bold":
-            styles.push({ start, end, style: baseStyle.setBold(true).build() });
+            styles.push({ start, end, style: base.setBold(true).build() });
             break;
 
           case "italic":
-            styles.push({ start, end, style: baseStyle.setItalic(true).build() });
+            styles.push({ start, end, style: base.setItalic(true).build() });
             break;
 
           case "strike":
-            styles.push({ start, end, style: baseStyle.setStrikethrough(true).build() });
+            styles.push({ start, end, style: base.setStrikethrough(true).build() });
             break;
 
           case "code":
             styles.push({
               start,
               end,
-              style: baseStyle
+              style: base
                 .setFontFamily("Courier New")
                 .setBackgroundColor(MD_CONFIG.INLINE_CODE_BG)
                 .build()
@@ -223,7 +248,7 @@ function applyMarkdown(cell, original) {
             styles.push({
               start,
               end,
-              style: baseStyle.setForegroundColor("#1155cc").setUnderline(true).build(),
+              style: base.setForegroundColor("#1155cc").setUnderline(true).build(),
               link: t.url
             });
             break;
@@ -232,6 +257,9 @@ function applyMarkdown(cell, original) {
         local += t.text.length;
       });
 
+      /* =========================
+       * QUOTE STYLE
+       * ========================= */
       if (isQuote) {
         styles.push({
           start: index,
@@ -243,6 +271,9 @@ function applyMarkdown(cell, original) {
         });
       }
 
+      /* =========================
+       * HEADER STYLE APPLY
+       * ========================= */
       if (headingStyle) {
         styles.push({
           start: index,
@@ -267,17 +298,14 @@ function applyMarkdown(cell, original) {
 
     cell.setRichTextValue(builder.build());
 
-    // THEME BACKGROUND
     if (isDark) {
       cell.setBackground(theme.BG);
-      cell.setFontColor(theme.TEXT);
     } else {
       cell.setBackground(null);
-      cell.setFontColor(null);
     }
 
   } finally {
-    Utilities.sleep(30);
+    Utilities.sleep(20);
     cell.setNote("");
   }
 }

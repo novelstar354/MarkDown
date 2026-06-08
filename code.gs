@@ -1,35 +1,25 @@
 /**
  * =========================================================
- * Google Sheets Markdown Renderer - Full Edition
- * =========================================================
- * Features:
- * - Real-time Markdown Rendering
- * - Undo-safe
- * - Dark Theme
- * - Code Block
- * - Heading
- * - Bold
- * - Italic
- * - Strike
- * - Inline Code
- * - Quote
- * - List
- * - Checkbox
- * - Link
- * - Full Re-render
+ * Google Sheets Markdown Renderer - Stable Full Edition
  * =========================================================
  */
 
-/* =========================================================
- * SETTINGS
- * ========================================================= */
-
 const MD_CONFIG = {
-  DARK_THEME: true,
-  CODE_BLOCK_BG: "#1e1e1e",
-  CODE_BLOCK_TEXT: "#dcdcdc",
-  QUOTE_COLOR: "#888888",
-  INLINE_CODE_BG: "#eeeeee"
+  INLINE_CODE_BG: "#eeeeee",
+  DARK: {
+    BG: "#111111",
+    TEXT: "#eeeeee",
+    CODE_BG: "#1e1e1e",
+    CODE_TEXT: "#dcdcdc",
+    QUOTE: "#888888"
+  },
+  LIGHT: {
+    BG: null,
+    TEXT: null,
+    CODE_BG: "#f5f5f5",
+    CODE_TEXT: "#222222",
+    QUOTE: "#666666"
+  }
 };
 
 /* =========================================================
@@ -37,7 +27,6 @@ const MD_CONFIG = {
  * ========================================================= */
 
 function onOpen() {
-
   SpreadsheetApp.getUi()
     .createMenu("Markdown")
     .addItem("全再変換", "renderMarkdown")
@@ -46,41 +35,31 @@ function onOpen() {
 }
 
 /* =========================================================
- * DARK THEME TOGGLE
+ * DARK MODE
  * ========================================================= */
 
 function toggleDarkTheme() {
-
   const props = PropertiesService.getDocumentProperties();
-
-  const current = props.getProperty("MD_DARK");
-
-  if (current === "true") {
-    props.setProperty("MD_DARK", "false");
-  } else {
-    props.setProperty("MD_DARK", "true");
-  }
+  const current = props.getProperty("MD_DARK") === "true";
+  props.setProperty("MD_DARK", (!current).toString());
 
   SpreadsheetApp.getActiveSpreadsheet().toast(
-    "Dark Theme Changed"
+    current ? "Light Theme ON" : "Dark Theme ON"
   );
 }
 
 /* =========================================================
- * REALTIME
+ * EDIT HOOK
  * ========================================================= */
 
 function onEdit(e) {
-
   if (!e || !e.range) return;
 
   const cell = e.range;
-
-  if (cell.getNote() === "__MD_RENDERING__") return;
-
   const value = e.value;
 
   if (!value || typeof value !== "string") return;
+  if (cell.getNote() === "__MD_RENDERING__") return;
 
   applyMarkdown(cell, value);
 }
@@ -90,31 +69,20 @@ function onEdit(e) {
  * ========================================================= */
 
 function renderMarkdown() {
-
   const sheet = SpreadsheetApp.getActiveSheet();
-
   const range = sheet.getDataRange();
-
   const values = range.getValues();
 
   for (let r = 0; r < values.length; r++) {
-
     for (let c = 0; c < values[r].length; c++) {
-
       const value = values[r][c];
-
       if (!value || typeof value !== "string") continue;
 
-      applyMarkdown(
-        range.getCell(r + 1, c + 1),
-        value
-      );
+      applyMarkdown(range.getCell(r + 1, c + 1), value);
     }
   }
 
-  SpreadsheetApp.getActiveSpreadsheet().toast(
-    "Markdown Render Complete"
-  );
+  SpreadsheetApp.getActiveSpreadsheet().toast("Markdown Render Complete");
 }
 
 /* =========================================================
@@ -122,359 +90,194 @@ function renderMarkdown() {
  * ========================================================= */
 
 function applyMarkdown(cell, original) {
-
   try {
-
     cell.setNote("__MD_RENDERING__");
 
-    const darkTheme =
-      PropertiesService
-        .getDocumentProperties()
-        .getProperty("MD_DARK") === "true";
+    const isDark =
+      PropertiesService.getDocumentProperties().getProperty("MD_DARK") === "true";
+
+    const theme = isDark ? MD_CONFIG.DARK : MD_CONFIG.LIGHT;
 
     const lines = original.split("\n");
 
-    const renderedLines = [];
-
     const styles = [];
-
-    let currentIndex = 0;
+    const renderedLines = [];
+    let index = 0;
 
     for (let i = 0; i < lines.length; i++) {
+      let line = lines[i];
+      let headingStyle = null;
 
-      const line = lines[i];
-
-      // =====================================================
       // CODE BLOCK
-      // =====================================================
-
       if (line.startsWith("```")) {
-
-        let codeContent = [];
-
+        let code = [];
         i++;
 
-        while (
-          i < lines.length &&
-          !lines[i].startsWith("```")
-        ) {
-          codeContent.push(lines[i]);
+        while (i < lines.length && !lines[i].startsWith("```")) {
+          code.push(lines[i]);
           i++;
         }
 
-        const codeText = codeContent.join("\n");
-
-        renderedLines.push(codeText);
+        const text = code.join("\n");
+        renderedLines.push(text);
 
         styles.push({
-          start: currentIndex,
-          end: currentIndex + codeText.length,
+          start: index,
+          end: index + text.length,
           style: SpreadsheetApp.newTextStyle()
             .setFontFamily("Courier New")
-            .setForegroundColor(MD_CONFIG.CODE_BLOCK_TEXT)
-            .build(),
-          bg: MD_CONFIG.CODE_BLOCK_BG
+            .setForegroundColor(theme.CODE_TEXT)
+            .build()
         });
 
-        currentIndex += codeText.length + 1;
-
+        index += text.length + 1;
         continue;
       }
 
-      let rendered = line;
-
-      let headingStyle = null;
-
-      // =====================================================
-      // HEADINGS
-      // =====================================================
-
-      if (line.startsWith("### ")) {
-
-        rendered = line.replace(/^### /, "");
-
-        headingStyle =
-          SpreadsheetApp.newTextStyle()
-            .setBold(true)
-            .setFontSize(15)
-            .build();
-
+      // HEADERS
+      if (line.startsWith("# ")) {
+        line = line.replace("# ", "");
+        headingStyle = SpreadsheetApp.newTextStyle().setBold(true).setFontSize(22).build();
       } else if (line.startsWith("## ")) {
-
-        rendered = line.replace(/^## /, "");
-
-        headingStyle =
-          SpreadsheetApp.newTextStyle()
-            .setBold(true)
-            .setFontSize(18)
-            .build();
-
-      } else if (line.startsWith("# ")) {
-
-        rendered = line.replace(/^# /, "");
-
-        headingStyle =
-          SpreadsheetApp.newTextStyle()
-            .setBold(true)
-            .setFontSize(22)
-            .build();
+        line = line.replace("## ", "");
+        headingStyle = SpreadsheetApp.newTextStyle().setBold(true).setFontSize(18).build();
+      } else if (line.startsWith("### ")) {
+        line = line.replace("### ", "");
+        headingStyle = SpreadsheetApp.newTextStyle().setBold(true).setFontSize(15).build();
       }
 
-      // =====================================================
-      // QUOTE
-      // =====================================================
-
-      if (rendered.startsWith("> ")) {
-
-        rendered = rendered.replace(/^> /, "");
-
-        styles.push({
-          start: currentIndex,
-          end: currentIndex + rendered.length,
-          style: SpreadsheetApp.newTextStyle()
-            .setItalic(true)
-            .setForegroundColor(MD_CONFIG.QUOTE_COLOR)
-            .build()
-        });
+      // QUOTES
+      let isQuote = false;
+      if (line.startsWith("> ")) {
+        line = line.replace("> ", "");
+        isQuote = true;
       }
 
-      // =====================================================
       // CHECKBOX
-      // =====================================================
-
-      rendered = rendered
-        .replace(/^- \[ \] /gm, "☐ ")
-        .replace(/^- \[[xX]\] /gm, "☑ ")
-        .replace(/^- /gm, "• ");
-
-      // =====================================================
-      // TOKENIZE
-      // =====================================================
-
-      const tokens = [];
+      line = line
+        .replace(/^- \[ \] /g, "☐ ")
+        .replace(/^- \[[xX]\] /g, "☑ ")
+        .replace(/^- /g, "• ");
 
       const regex =
         /(\*\*(.*?)\*\*)|(\*(.*?)\*)|(~~(.*?)~~)|(`(.*?)`)|(\[(.*?)\]\((.*?)\))/g;
 
-      let lastIndex = 0;
+      let tokens = [];
+      let last = 0;
+      let m;
 
-      let match;
-
-      while ((match = regex.exec(rendered)) !== null) {
-
-        if (match.index > lastIndex) {
-
-          tokens.push({
-            type: "text",
-            text: rendered.substring(lastIndex, match.index)
-          });
+      while ((m = regex.exec(line)) !== null) {
+        if (m.index > last) {
+          tokens.push({ type: "text", text: line.slice(last, m.index) });
         }
 
-        if (match[1]) {
+        if (m[1]) tokens.push({ type: "bold", text: m[2] });
+        else if (m[3]) tokens.push({ type: "italic", text: m[4] });
+        else if (m[5]) tokens.push({ type: "strike", text: m[6] });
+        else if (m[7]) tokens.push({ type: "code", text: m[8] });
+        else if (m[9]) tokens.push({ type: "link", text: m[10], url: m[11] });
 
-          tokens.push({
-            type: "bold",
-            text: match[2]
-          });
-
-        } else if (match[3]) {
-
-          tokens.push({
-            type: "italic",
-            text: match[4]
-          });
-
-        } else if (match[5]) {
-
-          tokens.push({
-            type: "strike",
-            text: match[6]
-          });
-
-        } else if (match[7]) {
-
-          tokens.push({
-            type: "code",
-            text: match[8]
-          });
-
-        } else if (match[9]) {
-
-          tokens.push({
-            type: "link",
-            text: match[10],
-            url: match[11]
-          });
-        }
-
-        lastIndex = regex.lastIndex;
+        last = regex.lastIndex;
       }
 
-      if (lastIndex < rendered.length) {
-
-        tokens.push({
-          type: "text",
-          text: rendered.substring(lastIndex)
-        });
+      if (last < line.length) {
+        tokens.push({ type: "text", text: line.slice(last) });
       }
 
-      // =====================================================
-      // BUILD LINE
-      // =====================================================
+      const visible = tokens.map(t => t.text).join("");
+      renderedLines.push(visible);
 
-      let visibleLine = "";
-
-      tokens.forEach(t => {
-        visibleLine += t.text;
-      });
-
-      renderedLines.push(visibleLine);
-
-      let localIndex = currentIndex;
+      let local = index;
 
       tokens.forEach(t => {
+        const start = local;
+        const end = local + t.text.length;
 
-        const start = localIndex;
-
-        const end = localIndex + t.text.length;
+        const baseStyle = SpreadsheetApp.newTextStyle();
 
         switch (t.type) {
-
           case "bold":
-
-            styles.push({
-              start,
-              end,
-              style:
-                SpreadsheetApp.newTextStyle()
-                  .setBold(true)
-                  .build()
-            });
-
+            styles.push({ start, end, style: baseStyle.setBold(true).build() });
             break;
 
           case "italic":
-
-            styles.push({
-              start,
-              end,
-              style:
-                SpreadsheetApp.newTextStyle()
-                  .setItalic(true)
-                  .build()
-            });
-
+            styles.push({ start, end, style: baseStyle.setItalic(true).build() });
             break;
 
           case "strike":
-
-            styles.push({
-              start,
-              end,
-              style:
-                SpreadsheetApp.newTextStyle()
-                  .setStrikethrough(true)
-                  .build()
-            });
-
+            styles.push({ start, end, style: baseStyle.setStrikethrough(true).build() });
             break;
 
           case "code":
-
             styles.push({
               start,
               end,
-              style:
-                SpreadsheetApp.newTextStyle()
-                  .setFontFamily("Courier New")
-                  .setBackgroundColor(
-                    MD_CONFIG.INLINE_CODE_BG
-                  )
-                  .build()
+              style: baseStyle
+                .setFontFamily("Courier New")
+                .setBackgroundColor(MD_CONFIG.INLINE_CODE_BG)
+                .build()
             });
-
             break;
 
           case "link":
-
             styles.push({
               start,
               end,
-              style:
-                SpreadsheetApp.newTextStyle()
-                  .setForegroundColor("#1155cc")
-                  .setUnderline(true)
-                  .build(),
+              style: baseStyle.setForegroundColor("#1155cc").setUnderline(true).build(),
               link: t.url
             });
-
             break;
         }
 
-        localIndex += t.text.length;
+        local += t.text.length;
       });
 
-      if (headingStyle) {
-
+      if (isQuote) {
         styles.push({
-          start: currentIndex,
-          end: currentIndex + visibleLine.length,
+          start: index,
+          end: index + visible.length,
+          style: SpreadsheetApp.newTextStyle()
+            .setItalic(true)
+            .setForegroundColor(theme.QUOTE)
+            .build()
+        });
+      }
+
+      if (headingStyle) {
+        styles.push({
+          start: index,
+          end: index + visible.length,
           style: headingStyle
         });
       }
 
-      currentIndex += visibleLine.length + 1;
+      index += visible.length + 1;
     }
 
-    const finalText = renderedLines.join("\n");
+    const text = renderedLines.join("\n");
 
-    const builder =
-      SpreadsheetApp.newRichTextValue()
-        .setText(finalText);
+    const builder = SpreadsheetApp.newRichTextValue().setText(text);
 
     styles.forEach(s => {
-
       try {
-
-        builder.setTextStyle(
-          s.start,
-          s.end,
-          s.style
-        );
-
-        if (s.link) {
-
-          builder.setLinkUrl(
-            s.start,
-            s.end,
-            s.link
-          );
-        }
-
+        builder.setTextStyle(s.start, s.end, s.style);
+        if (s.link) builder.setLinkUrl(s.start, s.end, s.link);
       } catch (e) {}
     });
 
     cell.setRichTextValue(builder.build());
 
-    // =====================================================
-    // DARK THEME
-    // =====================================================
-
-    if (darkTheme) {
-
-      cell.setBackground("#111111");
-      cell.setFontColor("#eeeeee");
-
+    // THEME BACKGROUND
+    if (isDark) {
+      cell.setBackground(theme.BG);
+      cell.setFontColor(theme.TEXT);
     } else {
-
       cell.setBackground(null);
       cell.setFontColor(null);
     }
 
   } finally {
-
-    Utilities.sleep(50);
-
+    Utilities.sleep(30);
     cell.setNote("");
   }
 }

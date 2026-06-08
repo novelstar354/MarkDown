@@ -1,5 +1,7 @@
 # Google Sheets Markdown Renderer
 
+Discord / GitHub Inspired Markdown Renderer for Google Sheets.
+
 GoogleスプレッドシートでMarkdownをリアルタイム描画できる高機能Apps Script。
 
 セルにMarkdownを書くだけで、自動的にリッチテキストへ変換されます。
@@ -14,6 +16,11 @@ GoogleスプレッドシートでMarkdownをリアルタイム描画できる高
 * コードブロック
 * リッチテキスト描画
 * リンク自動変換
+* Spoiler対応
+* Horizontal Rule対応
+* ネストリスト対応
+* テーブル整形
+* Discord風引用
 * Apps Scriptのみで動作
 * インストール不要
 * 軽量・高速
@@ -22,21 +29,28 @@ GoogleスプレッドシートでMarkdownをリアルタイム描画できる高
 
 # Supported Markdown
 
-| Markdown       | Result    |
-| -------------- | --------- |
-| `# Heading`    | 大見出し      |
-| `## Heading`   | 中見出し      |
-| `### Heading`  | 小見出し      |
-| `**Bold**`     | 太字        |
-| `*Italic*`     | 斜体        |
-| `~~Strike~~`   | 打ち消し      |
-| `` `Code` ``   | インラインコード  |
-| `> Quote`      | 引用        |
-| `- List`       | 箇条書き      |
-| `- [ ] Task`   | 未完了チェック   |
-| `- [x] Task`   | 完了チェック    |
-| `[Link](URL)`  | クリック可能リンク |
-| ` ```code``` ` | コードブロック   |
+| Markdown         | Result          |         |        |   |         |
+| ---------------- | --------------- | ------- | ------ | - | ------- |
+| `# Heading`      | 大見出し            |         |        |   |         |
+| `## Heading`     | 中見出し            |         |        |   |         |
+| `### Heading`    | 小見出し            |         |        |   |         |
+| `#### Heading`   | 超小見出し           |         |        |   |         |
+| `##### Heading`  | ミニ見出し           |         |        |   |         |
+| `###### Heading` | 極小見出し           |         |        |   |         |
+| `**Bold**`       | 太字              |         |        |   |         |
+| `*Italic*`       | 斜体              |         |        |   |         |
+| `~~Strike~~`     | 打ち消し            |         |        |   |         |
+| `` `Code` ``     | インラインコード        |         |        |   |         |
+| `> Quote`        | Discord風引用      |         |        |   |         |
+| `- List`         | 箇条書き            |         |        |   |         |
+| `  - Nested`     | ネストリスト          |         |        |   |         |
+| `- [ ] Task`     | 未完了チェック         |         |        |   |         |
+| `- [x] Task`     | 完了チェック          |         |        |   |         |
+| `[Link](URL)`    | クリック可能リンク       |         |        |   |         |
+| ` ```code``` `   | コードブロック         |         |        |   |         |
+| `                |                 | Spoiler |        | ` | Spoiler |
+| `---`            | Horizontal Rule |         |        |   |         |
+| `                | Table           | `       | テーブル整形 |   |         |
 
 ---
 
@@ -44,7 +58,7 @@ GoogleスプレッドシートでMarkdownをリアルタイム描画できる高
 
 入力：
 
-````markdown id="61vskm"
+````markdown id="mttjlwm"
 # Google Sheets Markdown Renderer
 
 ## Features
@@ -61,9 +75,19 @@ GoogleスプレッドシートでMarkdownをリアルタイム描画できる高
 
 - List Item
 
+  - Nested Item
+
 - [ ] TODO
 
 - [x] DONE
+
+||SECRET||
+
+---
+
+| Name | Age |
+|---|---|
+| Alex | 17 |
 
 [Google](https://google.com)
 
@@ -80,6 +104,87 @@ Google Sheets上で自動描画。
 
 ---
 
+# New Features (Ultimate Edition)
+
+## Spoiler
+
+Discord風Spoiler対応。
+
+```markdown id="q4n2sv"
+||SECRET||
+```
+
+↓
+
+```text id="f6t68u"
+████████
+```
+
+---
+
+## Horizontal Rule
+
+区切り線対応。
+
+```markdown id="mq3r7k"
+---
+```
+
+↓
+
+```text id="9m0e5u"
+────────────────────
+```
+
+---
+
+## Nested List
+
+ネスト箇条書き対応。
+
+```markdown id="mtkq1w"
+- Item
+  - Nested
+    - Deep Nested
+```
+
+---
+
+## Table Rendering
+
+GitHub風テーブル整形。
+
+```markdown id="pn4px8"
+| Name | Age |
+|---|---|
+| Alex | 17 |
+```
+
+↓
+
+```text id="shjlwm"
+Name │ Age
+Alex │ 17
+```
+
+---
+
+## Discord Style Quote
+
+引用がDiscord風UIになります。
+
+```markdown id="l7knvt"
+> Quote
+```
+
+↓
+
+```text id="e5v3bm"
+▎ Quote
+```
+
+---
+
 # Installation
 
 ## 1. Open Google Sheets
@@ -92,7 +197,7 @@ Google Sheets上で自動描画。
 
 メニュー：
 
-```text id="g3v37n"
+```text id="h1q62j"
 拡張機能 → Apps Script
 ```
 
@@ -114,7 +219,7 @@ Google Sheets上で自動描画。
 
 Apps Script画面で：
 
-```text id="wsvu4x"
+```text id="b5s1fo"
 ▶ 実行
 ```
 
@@ -130,7 +235,7 @@ Googleアカウント認証を許可してください。
 
 例：
 
-```markdown id="dvm3bj"
+```markdown id="jtbq52"
 **Hello World**
 ```
 
@@ -142,7 +247,7 @@ Googleアカウント認証を許可してください。
 
 シート上部に：
 
-```text id="d6y69g"
+```text id="n9m7o0"
 Markdown
 ```
 
@@ -164,24 +269,8 @@ Markdown
 * 背景色自動変更
 * 文字色最適化
 * コードブロック強化
-
----
-
-# Code Block
-
-コードブロック対応。
-
-例：
-
-````markdown id="2k9ndm"
-```javascript
-const hello = "world";
-```
-````
-
-↓
-
-等幅フォント + ダーク背景で表示。
+* ダーク用リンク色
+* ダーク用コード色
 
 ---
 
@@ -193,6 +282,8 @@ const hello = "world";
 * Markdown Tokenizer
 * Rich Text Renderer
 * Real-time Rendering Engine
+* Regex Parser
+* Token Based Styling Engine
 
 ---
 
@@ -214,9 +305,19 @@ MarkdownをToken化して描画するため：
 
 ---
 
-## Real-time Rendering
+## Safer onEdit
 
-セル編集後、自動でMarkdownを変換。
+`e.value` ではなく：
+
+```javascript id="l9fph3"
+cell.getDisplayValue()
+```
+
+を使用することで：
+
+* IME問題軽減
+* 複数貼り付け安定化
+* Undo競合軽減
 
 ---
 
@@ -224,12 +325,11 @@ MarkdownをToken化して描画するため：
 
 現在未対応：
 
-* テーブル
 * HTML埋め込み
 * 画像
 * シンタックスハイライト
-* ネストリスト
 * Obsidian拡張記法
+* Live Side Preview
 
 ---
 
@@ -243,12 +343,15 @@ MarkdownをToken化して描画するため：
 * PDF Export
 * Obsidian Theme
 * Notion Theme
-* Discord Markdown
+* Discord Theme
 * Side Preview
 * Live Preview
 * Custom CSS
 * Multi Theme
 * Auto Table Rendering
+* Wiki Link
+* @Mention
+* Emoji Shortcodes
 
 ---
 

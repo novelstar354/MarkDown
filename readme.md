@@ -1,16 +1,8 @@
 # Google Sheets Markdown Renderer
 
-Discord / GitHub Inspired Markdown Renderer for Google Sheets.
-
 GoogleスプレッドシートでMarkdownをリアルタイム描画できる高機能Apps Script。
 
 セルにMarkdownを書くだけで、自動的にリッチテキストへ変換されます。
-
----
-
-![Version](https://img.shields.io/badge/version-ultimate-blue)
-![Apps Script](https://img.shields.io/badge/apps--script-google-yellow)
-![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
 
@@ -22,11 +14,6 @@ GoogleスプレッドシートでMarkdownをリアルタイム描画できる高
 * コードブロック
 * リッチテキスト描画
 * リンク自動変換
-* Spoiler対応
-* Horizontal Rule対応
-* ネストリスト対応
-* テーブル整形
-* Discord風引用
 * Apps Scriptのみで動作
 * インストール不要
 * 軽量・高速
@@ -35,32 +22,65 @@ GoogleスプレッドシートでMarkdownをリアルタイム描画できる高
 
 # Supported Markdown
 
-| Markdown         | Description     |         |      |   |         |
-| ---------------- | --------------- | ------- | ---- | - | ------- |
-| `# Heading`      | 大見出し            |         |      |   |         |
-| `## Heading`     | 中見出し            |         |      |   |         |
-| `### Heading`    | 小見出し            |         |      |   |         |
-| `#### Heading`   | 超小見出し           |         |      |   |         |
-| `##### Heading`  | ミニ見出し           |         |      |   |         |
-| `###### Heading` | 極小見出し           |         |      |   |         |
-| `**Bold**`       | 太字              |         |      |   |         |
-| `*Italic*`       | 斜体              |         |      |   |         |
-| `~~Strike~~`     | 打ち消し            |         |      |   |         |
-| `` `Code` ``     | インラインコード        |         |      |   |         |
-| `> Quote`        | Discord風引用      |         |      |   |         |
-| `- List`         | 箇条書き            |         |      |   |         |
-| `  - Nested`     | ネストリスト          |         |      |   |         |
-| `- [ ] Task`     | 未完了チェック         |         |      |   |         |
-| `- [x] Task`     | 完了チェック          |         |      |   |         |
-| `[Link](URL)`    | クリック可能リンク       |         |      |   |         |
-| ` ```code``` `   | コードブロック         |         |      |   |         |
-| `                |                 | Spoiler |      | ` | Spoiler |
-| `---`            | Horizontal Rule |         |      |   |         |
-| `                | Table           | `       | テーブル |   |         |
+| Markdown       | Result    |
+| -------------- | --------- |
+| `# Heading`    | 大見出し      |
+| `## Heading`   | 中見出し      |
+| `### Heading`  | 小見出し      |
+| `**Bold**`     | 太字        |
+| `*Italic*`     | 斜体        |
+| `~~Strike~~`   | 打ち消し      |
+| `` `Code` ``   | インラインコード  |
+| `> Quote`      | 引用        |
+| `- List`       | 箇条書き      |
+| `- [ ] Task`   | 未完了チェック   |
+| `- [x] Task`   | 完了チェック    |
+| `[Link](URL)`  | クリック可能リンク |
+| ` ```code``` ` | コードブロック   |
 
 ---
 
-# 🚀 Quick Start
+# Demo
+
+入力：
+
+````markdown id="61vskm"
+# Google Sheets Markdown Renderer
+
+## Features
+
+**Bold Text**
+
+*Italic Text*
+
+~~Strike~~
+
+`const x = 1`
+
+> Quote
+
+- List Item
+
+- [ ] TODO
+
+- [x] DONE
+
+[Google](https://google.com)
+
+```js
+function hello() {
+  console.log("Hello");
+}
+```
+````
+
+↓
+
+Google Sheets上で自動描画。
+
+---
+
+# Installation
 
 ## 1. Open Google Sheets
 
@@ -70,7 +90,9 @@ GoogleスプレッドシートでMarkdownをリアルタイム描画できる高
 
 ## 2. Open Apps Script
 
-```text
+メニュー：
+
+```text id="g3v37n"
 拡張機能 → Apps Script
 ```
 
@@ -92,7 +114,7 @@ GoogleスプレッドシートでMarkdownをリアルタイム描画できる高
 
 Apps Script画面で：
 
-```text
+```text id="wsvu4x"
 ▶ 実行
 ```
 
@@ -102,158 +124,17 @@ Googleアカウント認証を許可してください。
 
 ---
 
-# Demo
+# Usage
 
-Input:
+セルにMarkdownを書くだけです。
 
-````markdown
-md:# Google Sheets Markdown Renderer
+例：
 
-## Features
-
-**Bold Text**
-
-*Italic Text*
-
-~~Strike~~
-
-`const x = 1`
-
-> Quote
-
-- List Item
-
-  - Nested Item
-
-- [ ] TODO
-
-- [x] DONE
-
-||SECRET||
-
----
-
-| Name | Age |
-|---|---|
-| Alex | 17 |
-
-[Google](https://google.com)
-
-```js
-function hello() {
-  console.log("Hello");
-}
-```
-````
-
-Rendered in Google Sheets:
-
-```text
-Google Sheets Markdown Renderer
-
-Features
-
-Bold Text
-Italic Text
-Strike
-const x = 1
-
-▎ Quote
-
-• List Item
-　• Nested Item
-
-☐ TODO
-☑ DONE
-
-████████
-
-────────────────────
-
-Name │ Age
-Alex │ 17
+```markdown id="dvm3bj"
+**Hello World**
 ```
 
----
-
-# Ultimate Edition Features
-
-## Spoiler
-
-Discord風Spoiler対応。
-
-```markdown
-||SECRET||
-```
-
-Rendered:
-
-```text
-████████
-```
-
----
-
-## Horizontal Rule
-
-区切り線対応。
-
-```markdown
----
-```
-
-Rendered:
-
-```text
-────────────────────
-```
-
----
-
-## Nested List
-
-ネスト箇条書き対応。
-
-```markdown
-- Item
-  - Nested
-    - Deep Nested
-```
-
----
-
-## Table Rendering
-
-GitHub風テーブル整形。
-
-```markdown
-| Name | Age |
-|---|---|
-| Alex | 17 |
-```
-
-Rendered:
-
-```text
-Name │ Age
-Alex │ 17
-```
-
----
-
-## Discord Style Quote
-
-引用がDiscord風UIになります。
-
-```markdown
-> Quote
-```
-
-Rendered:
-
-```text
-▎ Quote
-```
+編集完了後、自動で太字へ変換されます。
 
 ---
 
@@ -261,7 +142,7 @@ Rendered:
 
 シート上部に：
 
-```text
+```text id="d6y69g"
 Markdown
 ```
 
@@ -283,8 +164,24 @@ Markdown
 * 背景色自動変更
 * 文字色最適化
 * コードブロック強化
-* ダーク用リンク色
-* ダーク用コード色
+
+---
+
+# Code Block
+
+コードブロック対応。
+
+例：
+
+````markdown id="2k9ndm"
+```javascript
+const hello = "world";
+```
+````
+
+↓
+
+等幅フォント + ダーク背景で表示。
 
 ---
 
@@ -296,8 +193,6 @@ Markdown
 * Markdown Tokenizer
 * Rich Text Renderer
 * Real-time Rendering Engine
-* Regex Parser
-* Token Based Styling Engine
 
 ---
 
@@ -319,19 +214,9 @@ MarkdownをToken化して描画するため：
 
 ---
 
-## Safer onEdit
+## Real-time Rendering
 
-`e.value` ではなく：
-
-```javascript
-cell.getDisplayValue()
-```
-
-を使用することで：
-
-* IME問題軽減
-* 複数貼り付け安定化
-* Undo競合軽減
+セル編集後、自動でMarkdownを変換。
 
 ---
 
@@ -339,11 +224,12 @@ cell.getDisplayValue()
 
 現在未対応：
 
+* テーブル
 * HTML埋め込み
 * 画像
 * シンタックスハイライト
+* ネストリスト
 * Obsidian拡張記法
-* Live Side Preview
 
 ---
 
@@ -357,23 +243,12 @@ cell.getDisplayValue()
 * PDF Export
 * Obsidian Theme
 * Notion Theme
-* Discord Theme
+* Discord Markdown
 * Side Preview
 * Live Preview
 * Custom CSS
 * Multi Theme
 * Auto Table Rendering
-* Wiki Link
-* @Mention
-* Emoji Shortcodes
-
----
-
-# Why?
-
-Google Sheets lacks rich Markdown rendering.
-
-This project brings Discord / GitHub style Markdown directly into spreadsheet cells using only Apps Script.
 
 ---
 
@@ -387,4 +262,4 @@ MIT License
 
 # Author
 
-Created by Novel Star
+Novel Star

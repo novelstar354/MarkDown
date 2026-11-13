@@ -839,29 +839,80 @@ function splitTableRow(line) {
     .map(s => s.trim());
 }
 
+
 /* =========================================================
- * AUTO RESIZE
+ * AUTO RESIZE PRO
  * ========================================================= */
 
-// 選択セルの行・列を調整
+// 設定
+const MD_RESIZE_CONFIG = {
+  MIN_COLUMN_WIDTH: 4,
+  MIN_ROW_HEIGHT: 20,
+  MAX_ROW_HEIGHT: 250,
+  CHAR_WIDTH: 7.5,
+  LINE_HEIGHT: 16,
+  PADDING: 16
+};
+
+// セル内の表示文字列を取得
+function getDisplayText(cell) {
+  const rich = cell.getRichTextValue();
+
+  if (rich) {
+    return rich.getText() || "";
+  }
+
+  return String(cell.getDisplayValue() || "");
+}
+
+
+
+function calculateColumnWidth(text, fontSize) {
+  const lines = String(text).split("\n");
+  let maxWidth = 0;
+
+  lines.forEach(line => {
+    let width = 0;
+
+    for (const char of line) {
+      if (/[^\x00-\xff]/.test(char)) {
+        // 全角文字
+        width += fontSize * 1.0;
+      } else {
+        // 半角文字：できるだけ詰める
+        width += fontSize * 0.48;
+      }
+    }
+
+    maxWidth = Math.max(maxWidth, width);
+  });
+
+  // 左右の余白を最小限にする
+  return Math.max(50, Math.ceil(maxWidth + 10));
+}
+
+
+
+// 列幅に合わせた行の高さを計算
+
+
+
+function calculateRowHeight(text, columnWidth, fontSize) {
+  return Math.ceil(fontSize * 1.35 + 1);
+}
+
+
+
+
+// 選択範囲のサイズ調整
 function autoResizeSelected() {
   const range = SpreadsheetApp.getActiveRange();
   if (!range) return;
 
-  const sheet = range.getSheet();
-
-  sheet.autoResizeColumns(
-    range.getColumn(),
-    range.getNumColumns()
-  );
-
-  sheet.autoResizeRows(
-    range.getRow(),
-    range.getNumRows()
-  );
+  resizeRangeByContent(range);
 
   SpreadsheetApp.getActiveSpreadsheet().toast(
-    "選択範囲の幅・高さを調整しました"
+    "セルサイズを調整しました"
   );
 }
 
@@ -870,12 +921,19 @@ function autoResizeSelectedColumns() {
   const range = SpreadsheetApp.getActiveRange();
   if (!range) return;
 
-  range.getSheet().autoResizeColumns(
-    range.getColumn(),
-    range.getNumColumns()
-  );
+  const sheet = range.getSheet();
 
-  SpreadsheetApp.getActiveSpreadsheet().toast("列幅を調整しました");
+  for (
+    let col = range.getColumn();
+    col < range.getColumn() + range.getNumColumns();
+    col++
+  ) {
+    resizeColumnByContent(sheet, col);
+  }
+
+  SpreadsheetApp.getActiveSpreadsheet().toast(
+    "文字量に応じて列幅を調整しました"
+  );
 }
 
 // 選択行
@@ -883,12 +941,98 @@ function autoResizeSelectedRows() {
   const range = SpreadsheetApp.getActiveRange();
   if (!range) return;
 
-  range.getSheet().autoResizeRows(
+  resizeRowsByContent(
+    range.getSheet(),
     range.getRow(),
     range.getNumRows()
   );
 
-  SpreadsheetApp.getActiveSpreadsheet().toast("行高さを調整しました");
+  SpreadsheetApp.getActiveSpreadsheet().toast(
+    "文字量に応じて行高さを調整しました"
+  );
+}
+
+// 範囲全体
+function resizeRangeByContent(range) {
+  const sheet = range.getSheet();
+
+  for (
+    let col = range.getColumn();
+    col < range.getColumn() + range.getNumColumns();
+    col++
+  ) {
+    resizeColumnByContent(sheet, col);
+  }
+
+  resizeRowsByContent(
+    sheet,
+    range.getRow(),
+    range.getNumRows()
+  );
+}
+
+// 列幅調整
+function resizeColumnByContent(sheet, col) {
+  const lastRow = Math.max(sheet.getLastRow(), 1);
+  const values = sheet.getRange(1, col, lastRow, 1);
+
+  let maxWidth = MD_RESIZE_CONFIG.MIN_COLUMN_WIDTH;
+
+  values.getRichTextValues().forEach((row, i) => {
+    const cell = values.getCell(i + 1, 1);
+    const text = getDisplayText(cell);
+    if (!text) return;
+
+    const fontSize = Number(cell.getFontSize()) || 10;
+
+    maxWidth = Math.max(
+      maxWidth,
+      calculateColumnWidth(text, fontSize)
+    );
+  });
+
+  sheet.setColumnWidth(col, maxWidth);
+}
+
+// 行高さ調整
+function resizeRowsByContent(sheet, startRow, numRows) {
+  const lastCol = Math.max(sheet.getLastColumn(), 1);
+  const widths = [];
+
+  for (let col = 1; col <= lastCol; col++) {
+    widths[col] = sheet.getColumnWidth(col);
+  }
+
+  for (
+    let row = startRow;
+    row < startRow + numRows;
+    row++
+  ) {
+    let maxHeight = MD_RESIZE_CONFIG.MIN_ROW_HEIGHT;
+
+    for (let col = 1; col <= lastCol; col++) {
+      const cell = sheet.getRange(row, col);
+      const text = getDisplayText(cell);
+
+      if (!text) continue;
+
+      const fontSize = Number(cell.getFontSize()) || 10;
+
+      maxHeight = Math.max(
+        maxHeight,
+        calculateRowHeight(
+          text,
+          widths[col],
+          fontSize
+        )
+      );
+    }
+
+    sheet.setRowHeight(
+      row,
+      Math.min(maxHeight, MD_RESIZE_CONFIG.MAX_ROW_HEIGHT)
+    );
+  }
 }
 
 // シート全体
@@ -898,35 +1042,44 @@ function autoResizeAll() {
   const lastCol = Math.max(sheet.getLastColumn(), 1);
   const lastRow = Math.max(sheet.getLastRow(), 1);
 
-  sheet.autoResizeColumns(1, lastCol);
-  sheet.autoResizeRows(1, lastRow);
+  resizeRangeByContent(
+    sheet.getRange(1, 1, lastRow, lastCol)
+  );
 
   SpreadsheetApp.getActiveSpreadsheet().toast(
-    "シート全体の幅・高さを調整しました"
+    "シート全体のセルサイズを調整しました"
   );
 }
 
+// 全列
 function autoResizeAllColumns() {
   const sheet = SpreadsheetApp.getActiveSheet();
+  const lastCol = Math.max(sheet.getLastColumn(), 1);
 
-  sheet.autoResizeColumns(
-    1,
-    Math.max(sheet.getLastColumn(), 1)
+  for (let col = 1; col <= lastCol; col++) {
+    resizeColumnByContent(sheet, col);
+  }
+
+  SpreadsheetApp.getActiveSpreadsheet().toast(
+    "全列の幅を調整しました"
   );
-
-  SpreadsheetApp.getActiveSpreadsheet().toast("全列の幅を調整しました");
 }
 
+// 全行
 function autoResizeAllRows() {
   const sheet = SpreadsheetApp.getActiveSheet();
 
-  sheet.autoResizeRows(
+  resizeRowsByContent(
+    sheet,
     1,
     Math.max(sheet.getLastRow(), 1)
   );
 
-  SpreadsheetApp.getActiveSpreadsheet().toast("全行の高さを調整しました");
+  SpreadsheetApp.getActiveSpreadsheet().toast(
+    "全行の高さを調整しました"
+  );
 }
+
 
 /* =========================================================
  * WRAP

@@ -1051,32 +1051,56 @@ function autoResizeAll() {
   );
 }
 
-// 全列
+// シート全体の列幅（空白列は変更しない）
 function autoResizeAllColumns() {
   const sheet = SpreadsheetApp.getActiveSheet();
-  const lastCol = Math.max(sheet.getLastColumn(), 1);
+  const lastCol = sheet.getLastColumn();
+  const lastRow = sheet.getLastRow();
 
-  for (let col = 1; col <= lastCol; col++) {
-    resizeColumnByContent(sheet, col);
+  if (lastCol === 0 || lastRow === 0) return;
+
+  const values = sheet.getRange(1, 1, lastRow, lastCol).getDisplayValues();
+
+  for (let col = 0; col < lastCol; col++) {
+    const hasContent = values.some(row =>
+      row[col] !== ""
+    );
+
+    if (!hasContent) continue;
+
+    // 内容のある列だけ調整
+    resizeColumnByContent(sheet, col + 1);
   }
 
   SpreadsheetApp.getActiveSpreadsheet().toast(
-    "全列の幅を調整しました"
+    "内容のある列だけ幅を調整しました"
   );
 }
 
-// 全行
+
+// シート全体の行高さ（空白行は変更しない）
 function autoResizeAllRows() {
   const sheet = SpreadsheetApp.getActiveSheet();
+  const lastRow = sheet.getLastRow();
+  const lastCol = sheet.getLastColumn();
 
-  resizeRowsByContent(
-    sheet,
-    1,
-    Math.max(sheet.getLastRow(), 1)
-  );
+  if (lastRow === 0 || lastCol === 0) return;
+
+  const values = sheet.getRange(1, 1, lastRow, lastCol).getDisplayValues();
+
+  for (let row = 0; row < lastRow; row++) {
+    const hasContent = values[row].some(value =>
+      value !== ""
+    );
+
+    if (!hasContent) continue;
+
+    // 内容のある行だけ調整
+    resizeRowsByContent(sheet, row + 1, row + 1);
+  }
 
   SpreadsheetApp.getActiveSpreadsheet().toast(
-    "全行の高さを調整しました"
+    "内容のある行だけ高さを調整しました"
   );
 }
 

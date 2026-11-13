@@ -1,9 +1,3 @@
-/**
- * =========================================================
- * Google Sheets Markdown Renderer - H1~H6 FULL Edition
- * =========================================================
- */
-
 const MD_CONFIG = {
   INLINE_CODE_BG: "#eeeeee",
   DARK: {

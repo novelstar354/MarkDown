@@ -6,6 +6,7 @@
  * ========================================================= */
 
 const MD_CONFIG = {
+  DISABLED_SHEET: "_MD_DISABLED",
   SOURCE_SHEET: "_MD_SOURCE",
   INLINE_CODE_BG: "#eeeeee",
   ACCENT: "#4285f4",
@@ -54,6 +55,9 @@ function onOpen() {
     .createMenu("Markdown")
     .addItem("全再変換", "renderMarkdown")
     .addItem("選択セルを再変換", "renderSelectedMarkdown")
+    .addSeparator()
+    .addItem("Markdown変換を無効化（選択セル）", "disableMarkdownSelected")
+    .addItem("Markdown変換を有効化（選択セル）", "enableMarkdownSelected")
     .addSeparator()
     .addItem("Markdownを復元（選択セル）", "restoreSelectedMarkdown")
     .addItem("Markdownを復元（シート全体）", "restoreAllMarkdown")
@@ -190,15 +194,25 @@ function onEdit(e) {
   const range = e.range;
   const sheet = range.getSheet();
 
-  if (sheet.getName() === MD_CONFIG.SOURCE_SHEET) return;
+  if (
+    sheet.getName() === MD_CONFIG.SOURCE_SHEET ||
+    sheet.getName() === MD_CONFIG.DISABLED_SHEET
+  ) return;
 
   const map = loadSourceMap();
+  const disabled = loadDisabledMap();
   const values = range.getValues();
 
   for (let r = 0; r < values.length; r++) {
     for (let c = 0; c < values[r].length; c++) {
       const cell = range.getCell(r + 1, c + 1);
       const value = values[r][c];
+
+      const key = sourceKey(
+        sheet.getSheetId(),
+        cell.getRow(),
+        cell.getColumn()
+      );
 
       if (typeof value !== "string" || value === "") {
         deleteOriginal(
@@ -218,6 +232,9 @@ function onEdit(e) {
         map
       );
 
+      // 無効化されているセルは変換しない
+      if (disabled.has(key)) continue;
+
       applyMarkdown(cell, value);
     }
   }
@@ -230,10 +247,12 @@ function onEdit(e) {
 function renderMarkdown() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const map = loadSourceMap();
-
+  const disabled = loadDisabledMap();
   ss.getSheets().forEach(sheet => {
-    if (sheet.getName() === MD_CONFIG.SOURCE_SHEET) return;
-
+    if (
+  sheet.getName() === MD_CONFIG.SOURCE_SHEET ||
+  sheet.getName() === MD_CONFIG.DISABLED_SHEET
+) return;
     const range = sheet.getDataRange();
     const values = range.getValues();
 
@@ -263,7 +282,7 @@ function renderMarkdown() {
             map
           );
         }
-
+        if (disabled.has(key)) continue;
         applyMarkdown(cell, original);
       }
     }
@@ -281,9 +300,14 @@ function renderSelectedMarkdown() {
   if (!range) return;
 
   const sheet = range.getSheet();
-  if (sheet.getName() === MD_CONFIG.SOURCE_SHEET) return;
+
+  if (
+    sheet.getName() === MD_CONFIG.SOURCE_SHEET ||
+    sheet.getName() === MD_CONFIG.DISABLED_SHEET
+  ) return;
 
   const map = loadSourceMap();
+  const disabled = loadDisabledMap();
   const values = range.getValues();
 
   for (let r = 0; r < values.length; r++) {
@@ -299,19 +323,29 @@ function renderSelectedMarkdown() {
         cell.getColumn()
       );
 
+      if (disabled.has(key)) continue;
+
       const original = map.has(key)
         ? map.get(key).value
         : value;
 
       if (!map.has(key)) {
-        saveOriginal(sheet, cell.getRow(), cell.getColumn(), original, map);
+        saveOriginal(
+          sheet,
+          cell.getRow(),
+          cell.getColumn(),
+          original,
+          map
+        );
       }
 
       applyMarkdown(cell, original);
     }
   }
 
-  SpreadsheetApp.getActiveSpreadsheet().toast("Selected Render Complete");
+  SpreadsheetApp.getActiveSpreadsheet().toast(
+    "Selected Render Complete"
+  );
 }
 
 /* =========================================================
@@ -918,4 +952,152 @@ function disableWrapSelected() {
   SpreadsheetApp.getActiveSpreadsheet().toast(
     "テキストの折り返しを解除しました"
   );
+}
+
+/* =========================================================
+ * MARKDOWN ENABLE / DISABLE
+ * ========================================================= */
+
+// 無効セル保存シート
+function getDisabledSheet() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(MD_CONFIG.DISABLED_SHEET);
+
+  if (!sheet) {
+    sheet = ss.insertSheet(MD_CONFIG.DISABLED_SHEET);
+    sheet.getRange(1, 1, 1, 3).setValues([
+      ["SheetID", "Row", "Column"]
+    ]);
+    sheet.hideSheet();
+  }
+
+  return sheet;
+}
+
+// 無効セル一覧
+function loadDisabledMap() {
+  const sheet = getDisabledSheet();
+  const lastRow = sheet.getLastRow();
+  const map = new Set();
+
+  if (lastRow < 2) return map;
+
+  const data = sheet.getRange(2, 1, lastRow - 1, 3).getValues();
+
+  data.forEach(r => {
+    if (r[0] !== "" && r[1] !== "" && r[2] !== "") {
+      map.add(sourceKey(r[0], r[1], r[2]));
+    }
+  });
+
+  return map;
+}
+
+function disableMarkdownSelected() {
+  const range = SpreadsheetApp.getActiveRange();
+  if (!range) return;
+
+  const sheet = range.getSheet();
+
+  if (
+    sheet.getName() === MD_CONFIG.SOURCE_SHEET ||
+    sheet.getName() === MD_CONFIG.DISABLED_SHEET
+  ) return;
+
+  const storage = getDisabledSheet();
+  const disabled = loadDisabledMap();
+  const sourceMap = loadSourceMap();
+
+  const values = [];
+
+  for (let r = 0; r < range.getNumRows(); r++) {
+    for (let c = 0; c < range.getNumColumns(); c++) {
+      const row = range.getRow() + r;
+      const col = range.getColumn() + c;
+
+      const key = sourceKey(
+        sheet.getSheetId(),
+        row,
+        col
+      );
+
+      if (!disabled.has(key)) {
+        values.push([
+          sheet.getSheetId(),
+          row,
+          col
+        ]);
+
+        disabled.add(key);
+      }
+
+      // 変換済みならMarkdown原文に戻す
+      const original = sourceMap.get(key);
+
+      if (original) {
+        sheet.getRange(row, col).setValue(original.value);
+      }
+    }
+  }
+
+  if (values.length > 0) {
+    storage.getRange(
+      storage.getLastRow() + 1,
+      1,
+      values.length,
+      3
+    ).setValues(values);
+  }
+
+  SpreadsheetApp.getActiveSpreadsheet().toast(
+    "選択セルのMarkdown変換を無効化しました"
+  );
+}
+
+// 有効化
+function enableMarkdownSelected() {
+  const range = SpreadsheetApp.getActiveRange();
+  if (!range) return;
+
+  const sheet = range.getSheet();
+  const storage = getDisabledSheet();
+
+  const data = storage.getDataRange().getValues();
+  const selected = new Set();
+
+  for (let r = 0; r < range.getNumRows(); r++) {
+    for (let c = 0; c < range.getNumColumns(); c++) {
+      selected.add(
+        sourceKey(
+          sheet.getSheetId(),
+          range.getRow() + r,
+          range.getColumn() + c
+        )
+      );
+    }
+  }
+
+  const keep = [data[0]];
+
+  for (let i = 1; i < data.length; i++) {
+    const key = sourceKey(data[i][0], data[i][1], data[i][2]);
+
+    if (!selected.has(key)) {
+      keep.push(data[i]);
+    }
+  }
+
+  storage.clearContents();
+
+  if (keep.length > 0) {
+    storage.getRange(
+      1, 1, keep.length, 3
+    ).setValues(keep);
+  }
+
+  SpreadsheetApp.getActiveSpreadsheet().toast(
+    "選択セルのMarkdown変換を有効化しました"
+  );
+
+  renderSelectedMarkdown();
 }

@@ -789,7 +789,7 @@ function applyMarkdown(cell, original) {
     cell.setBackground(null);
   }
 
-  cell.setWrap(true);
+  cell.setWrap(false);
 }
 
 /* =========================================================
